@@ -1,0 +1,25 @@
+working_directory: /media/gmzlab/4TB/projects/mut_K37R
+genome_path: /home/gmzlab/Documents/ricardo/genome/homo_sapiens_ensembl_toplevel
+genome_spike: /home/gmzlab/Documents/ricardo/genome/mus_musculus
+spikein: no
+number_processors: 10
+paired_end: yes
+max_distance: 5000
+bin_size: 10
+sample_1: input1_B10
+sample_2: input1_B12
+sample_3: h3k37me1_B10
+sample_4: h3k37me1_B12
+input_1: 
+input_2: 
+input_3: input1_B10
+input_4: input1_B12
+histone: 
+
+
+
+
+
+
+
+
