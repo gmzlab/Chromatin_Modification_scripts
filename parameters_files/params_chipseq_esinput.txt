@@ -1,8 +1,0 @@
-working_directory: /media/gmzlab/4TB/projects/h3k37
-genome_path: /home/gmzlab/Documents/ricardo/genome/homo_sapiens_ucsc
-number_processors: 40
-paired_end: yes
-max_distance: 5000
-sample_1: input37_es
-input: 
-histone: 
