@@ -1,4 +1,4 @@
-## This script calculates bigWig coverage signal from BAM files. It also smoothes the coverage for better IGV visualization and performs input correction. ##
+## This scripts calculate bigWig coverage signal from BAM files. It also smoothes the coverage for better IGV visualization and performs input correction. ##
 
 mkdir -p WT/bw_files_merge/bw_smoothed_10000
 
