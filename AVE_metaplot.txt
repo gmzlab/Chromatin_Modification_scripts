@@ -1,0 +1,99 @@
+############################# METAPLOTTING #############################
+
+# Generating a normalized matrix containing coverage signal on selected regions.
+# - S: bigwig signal files (space-separated).
+# - R: selected regions file.
+# - o: gzipped output matrix 
+# - binSize: bin size in bases for normalization.
+# - b: upstream extend.
+# - a: downstream extend.
+# - p: number of processors.
+# - q: quiet mode.
+# - regionBodyLength: size in bases for resizing selected regions.
+# - missingDataAsZero: NA values are converted into 0.
+# - skipZeros: regions are removed when all signal values are 0.
+
+# MARKS
+computeMatrix scale-regions -S Data/WT/bw_files_merge/h3k37me3_B12_1.bw Data/WT/bw_files_merge/h3k9me3.bw Data/WT/bw_files_merge/h3k27me3.bw Data/WT/bw_files_merge/h3k36me2.bw Data/WT/bw_files_merge/h3k37me1_B12.bw Data/WT/bw_files_merge/h3k36me3.bw -R Data/genome/Homo_sapiens_ann_genes_110.bed -o results/metaplot/matrix1.gz --binSize 200 -b 3000 -a 3000 -p 12 -q --regionBodyLength 6000 --missingDataAsZero --skipZeros --maxThreshold 1000 # --minThreshold 0
+
+# OMICS
+computeMatrix scale-regions -S Data/WT/bw_files_merge/atac.bw Data/WT/bw_files_merge/pol2.bw Data/WT/bw_files_merge/rna_nascent.bw Data/WT/bw_files_merge/oris.bw -R Data/genome/Homo_sapiens_ann_genes_110.bed -o results/metaplot/matrix_omics.gz --binSize 200 -b 3000 -a 3000 -p 12 -q --regionBodyLength 6000 --missingDataAsZero --skipZeros --maxThreshold 1000 # --minThreshold 0
+
+# OMICS CLUSTERED BY H3K37me3
+computeMatrix scale-regions -S Data/WT/bw_files_merge/atac.bw Data/WT/bw_files_merge/pol2.bw Data/WT/bw_files_merge/rna_nascent.bw Data/WT/bw_files_merge/oris.bw -R results/metaplot/clusters.bed -o results/metaplot/matrix_omics_clustered.gz --binSize 200 -b 3000 -a 3000 -p 12 -q --regionBodyLength 6000 --missingDataAsZero --skipZeros --maxThreshold 300
+
+computeMatrix reference-point -S ${SAMPLES} -R ../results/mid.bed -o ../results/matrix.gz --binSize 200 -b 3000 -a 3000 -p 36 -q --missingDataAsZero --skipZeros --referencePoint center TSS TES --maxThreshold 1000 # --minThreshold 0 
+
+# Plotting previus matrix as a clustered heatmap.
+# - m: gzipped matrix outputted by computeMatrix.
+# - o: plot file including file extension.
+# - silhouette: returning average silhouette value.
+# - colorList: sorted list of colors corresponding to plotted signal values (comma-separated).
+# - sortUsing: sorting using mean.
+# - legendLocation: legend location as upper-right, upper-left, lower-right, center, etc.
+# - sortUsingSamples: number of the sample(s) for sorting (space-separated).
+# - clusterUsingSamples: number of the sample(s) for clustering (space-separated).
+# - min: minimum value for plotting each sample (space-separated). Lower values will be plotted using the same colour.
+# - max: maximum value for plotting each sample (space-separated). Higher valuer will be plotted using the same colour.
+# - yMin: minimum value for Y axis in top profile plot.
+# - yMax: maximum value for Y axis in top profile plot.
+# - kmeans: number of clusters.
+# - refPointLabel: name of the 0 value on profile topbar X axis when setting reference-point mode.
+# - z: names of the different clusters or genes in Y axis.
+# - outFileSortedRegions: name of the file RUNMODEd containing each cluster elements.
+
+cd ${WD}/results
+
+# MAIN MARKS
+plotHeatmap -m matrix1.gz -o metaplot_sort_k37me3.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 1 --clusterUsingSamples 1 -min 0 -max 0.20 --yMin 0 --yMax 0.20  --kmeans 2 --outFileSortedRegions clusters.bed --samplesLabel H3K37me3 H3K9me3 H3K27me3 H3K36me2 H3K37me1 H3K36me3 --regionsLabel "High H3K37me3" "Low H3K37me3"
+
+# OMICS
+plotHeatmap -m matrix_omics.gz -o metaplot_omics.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 1 --clusterUsingSamples 1 -min 0 -max  1.2 1.2 0.4 0.25 --yMin 0 --yMax  1.2 1.2 0.4 0.25  --kmeans 2 --outFileSortedRegions clusters.bed --samplesLabel "ATAC" "Pol II" "Nascent RNA" "Oris"  --regionsLabel "High H3K37me3" "Low H3K37me3"
+
+plotHeatmap -m matrix_omics_clustered.gz   -o metaplot_omics_clustered.pdf   --plotType fill --heatmapHeight 14 --heatmapWidth 6   --colorList blue,white,red   --sortRegions no --outFileSortedRegions clusters_omics_clustered.bed  --legendLocation best   --samplesLabel "ATAC" "Pol II" "Nascent RNA" "Early Oris"   --regionsLabel "High H3K37me3" "Low H3K37me3"   --yMin 0 --yMax 1.4 1 0.3 0.25   -min 0 -max 1.4 1 0.3 0.25
+
+# SORTING BY REGION LENGTH
+plotHeatmap -m matrix1.gz -o metaplot_sort_k37me3.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing region_length --legendLocation best --sortUsingSamples 1 --clusterUsingSamples 1 -min 0 -max 0.25 --yMin 0 --yMax 0.25  --kmeans 3 --outFileSortedRegions clusters.bed --linesAtTickMarks 
+
+# SORTING BY OTHER MARKS
+plotHeatmap -m matrix1.gz -o metaplot_sort_k9me3.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 2 --clusterUsingSamples 2 -min 0 -max 0.25 --yMin 0 --yMax 0.25  --kmeans 3 --outFileSortedRegions clusters.bed
+plotHeatmap -m matrix1.gz -o metaplot_sort_k37me1.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 3 --clusterUsingSamples 3 -min 0 -max 0.25 --yMin 0 --yMax 0.25  --kmeans 3 --outFileSortedRegions clusters.bed
+plotHeatmap -m matrix1.gz -o metaplot_sort_k36me3.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 4 --clusterUsingSamples 4 -min 0 -max 0.25 --yMin 0 --yMax 0.25  --kmeans 3 --outFileSortedRegions clusters.bed
+
+
+# PROFILE-CENTERED
+plotProfile -m matrix1.gz -o profile1.pdf --plotType fill --legendLocation best --endLabel 'TTS' --colors green blue red gray --yMax 0.3 0.15 0.15 0.15 --kmeans 4 --outFileSortedRegions clusters.bed --clusterUsingSamples 1 --numPlotsPerRow 3  --linesAtTickMarks 
+
+
+
+
+############################# E1-SPECIFIC METAPLOTTING #############################
+
+cd results/e1_metaplot/
+
+# We use the 5kb_5_E1.bed with complete bins as a reference.
+computeMatrix scale-regions -R 5kb_5_E1.bed --outFileName matrix_marks.gz --outFileNameMatrix matrix_marks.txt -S ../../Data/WT/bw_files_merge/h3k37me3_B12_1.bw ../../Data/WT/bw_files_merge/h3k9me3.bw ../../Data/WT/bw_files_merge/h3k27me3.bw ../../Data/WT/bw_files_merge/h3k36me2.bw ../../Data/WT/bw_files_merge/h3k37me1_B12.bw ../../Data/WT/bw_files_merge/h3k36me3.bw   --binSize 200 -b 0 -a 0 -p 12 -q --regionBodyLength 5000 --missingDataAsZero --skipZeros --maxThreshold 500 --smartLabels
+plotHeatmap -m matrix_marks.gz -o metaplot_h3k37me3.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 1 --clusterUsingSamples 1 -min 0 -max 0.20 --yMin 0 --yMax 0.20  --kmeans 2 --outFileSortedRegions clusters_marks.bed --samplesLabel H3K37me3 H3K9me3 H3K37me1 H3K36me3 H3K27me3 H3K36me2 --regionsLabel "High H3K37me3" "Low H3K37me3"
+
+# With input corrected data
+computeMatrix scale-regions -R 5kb_5_E1.bed --outFileName matrix_marks_corrected.gz --outFileNameMatrix matrix_marks.txt -S ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k37me3_B12_1_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k9me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k37me1_B12_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k36me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k27me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k36me2_ratio_corrected.bw  --binSize 200 -b 0 -a 0 -p 12 -q --regionBodyLength 5000 --missingDataAsZero --skipZeros --maxThreshold 500 --smartLabels
+plotHeatmap -m matrix_marks_corrected.gz -o metaplot_k37me3_corrected.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 1 --clusterUsingSamples 1  --kmeans 2 --outFileSortedRegions clusters_marks.bed --samplesLabel H3K37me3 H3K9me3 H3K37me1 H3K36me3 H3K27me3 H3K36me2 --regionsLabel "High H3K37me3" "Low H3K37me3"
+
+# With only k37me3-enriched bins
+computeMatrix scale-regions -R enriched_k37me3.bed --outFileName matrix_marks_k37me3.gz --outFileNameMatrix matrix_marks_k37me3.txt -S ../../Data/WT/bw_files_merge/bw_input_corrected/h3k37me3_B12_1_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k9me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k37me1_B12_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k36me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k27me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k36me2_ratio_corrected.bw --binSize 200 -b 0 -a 0 -p 12 -q --regionBodyLength 5000 --missingDataAsZero --skipZeros --maxThreshold 500 --smartLabels
+plotHeatmap -m matrix_marks_k37me3.gz -o metaplot_h3k37me3_enriched_k37me3.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 1 --clusterUsingSamples 1  --kmeans 2 --outFileSortedRegions clusters_marks.bed --samplesLabel H3K37me3 H3K9me3 H3K37me1 H3K36me3 H3K27me3 H3K36me2 --regionsLabel "High H3K37me3" "Low H3K37me3"
+
+# With only k9me3-enriched bins
+computeMatrix scale-regions -R enriched_k9me3.bed --outFileName matrix_marks_k9me3.gz --outFileNameMatrix matrix_marks_k9me3.txt -S ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k37me3_B12_1_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k9me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k37me1_B12_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k36me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k27me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_smoothed_10000_corrected_0001/h3k36me2_ratio_corrected.bw --binSize 200 -b 0 -a 0 -p 12 -q --regionBodyLength 5000 --missingDataAsZero --skipZeros --maxThreshold 500 --smartLabels
+plotHeatmap -m matrix_marks_k9me3.gz -o metaplot_h3k37me3_enriched_k9me3.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 1 --clusterUsingSamples 1  --kmeans 2 --outFileSortedRegions clusters_marks.bed --samplesLabel H3K37me3 H3K9me3 H3K37me1 H3K36me3 H3K27me3 H3K36me2 --regionsLabel "High H3K37me3" "Low H3K37me3"
+
+# Using binarized beds to cluster marks according to h3k37me3 / h3k9me3 signal
+computeMatrix scale-regions -R binarized_both.bed binarized_k37me3.bed binarized_k9me3.bed binarized_none.bed --outFileName matrix_marks_binarized.gz --outFileNameMatrix matrix_marks_binarized.txt -S ../../Data/WT/bw_files_merge/bw_input_corrected/h3k37me3_B12_1_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k9me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k37me1_B12_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k36me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k27me3_ratio_corrected.bw ../../Data/WT/bw_files_merge/bw_input_corrected/h3k36me2_ratio_corrected.bw  --binSize 200 -b 0 -a 0 -p 12 -q --regionBodyLength 5000 --missingDataAsZero --skipZeros --maxThreshold 500 --smartLabels
+plotHeatmap -m matrix_marks_binarized.gz -o metaplot_h3k37me3_binarized.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortUsing mean --legendLocation best --sortUsingSamples 1 --outFileSortedRegions clusters_marks.bed --samplesLabel H3K37me3 H3K9me3 H3K37me1 H3K36me3 H3K27me3 H3K36me2 --regionsLabel "Both" "K37me3" "K9me3" "none"
+
+
+# # Using binarized beds to cluster omics according to h3k37me3 / h3k9me3 signal
+computeMatrix scale-regions -R binarized_both.bed binarized_k37me3.bed binarized_k9me3.bed binarized_none.bed --outFileName matrix_omics_binarized.gz --outFileNameMatrix matrix_marks_binarized.txt -S ../../Data/WT/bw_files_merge/atac.bw ../../Data/WT/bw_files_merge/pol2.bw ../../Data/WT/bw_files_merge/rna_nascent.bw ../../Data/WT/bw_files_merge/oris.bw  --binSize 50 -b 0 -a 0 -p 12 -q --regionBodyLength 5000 --missingDataAsZero --skipZeros --maxThreshold 500 --smartLabels
+plotHeatmap -m matrix_omics_binarized.gz -o metaplot_omics_binarized.pdf --plotType fill --heatmapHeight 14 --heatmapWidth 6  --colorList blue,white,red --sortRegions no --legendLocation best -min 0 -max  0.04 0.02 0.01 0.03 --yMin 0 --yMax 0.04 0.02 0.01 0.03 --samplesLabel "ATAC" "Pol II" "Nascent RNA" "Oris"  --regionsLabel "Both" "K37me3" "K9me3" "none"
+
+

@@ -1,0 +1,103 @@
+## This script calculates bigWig coverage signal from BAM files. It also smoothes the coverage for better IGV visualization and performs input correction. ##
+
+mkdir -p WT/bw_files_merge/bw_smoothed_10000
+
+# --------- Generating smoothed BigWig files for all samples ----------
+
+# 1. mutK37R
+for bam in mutK37R/*.bam; do
+    base=$(basename "$bam" .bam)
+    bamCoverage \
+        -p 4 \                                    # number of processors
+        -b "$bam" \
+        -bs 50 \                                  # bin Size
+        --normalizeUsing CPM \                    # normalization method
+        --smoothLength 10000 \                    # bp window for smoothing
+        -o "WT/bw_files_merge/bw_smoothed_10000/${base}.bw"
+done
+
+# 2. WT/bam_files_merge
+for bam in WT/bam_files_merge/*.bam; do
+    base=$(basename "$bam" .bam)
+    bamCoverage \
+        -p 4 \
+        -b "$bam" \
+        -bs 50 \
+        --normalizeUsing CPM \
+        --smoothLength 10000 \
+        -o "WT/bw_files_merge/bw_smoothed_10000/${base}.bw"
+done
+
+# 3. WT/bam_files_merge/extra_omics
+for bam in WT/bam_files_merge/extra_omics/*.bam; do
+    base=$(basename "$bam" .bam)
+    bamCoverage \
+        -p 4 \
+        -b "$bam" \
+        -bs 50 \
+        --normalizeUsing CPM \
+        --smoothLength 10000 \
+        -o "WT/bw_files_merge/bw_smoothed_10000/${base}.bw"
+done
+
+# --------- Input correction bigwigCompare (ratio input/ChIP) ----------
+
+# Using the input reference to correct the coverage signal. Applying ratio with a pseudocount of 0.001 yields the best results for visualization
+
+cd WT/bw_files_merge/bw_smoothed_10000
+date ;
+# 4. For all h3k* files, except B10 and B12
+for i in $(ls h3k* | grep -v B1); do
+    base=$(basename "$i" .bw)
+    bigwigCompare \
+        -b1 "$i" \
+        -b2 input.bw \
+        --operation ratio \
+        --pseudocount 0.001 \
+        --skipNAs \
+        --binSize 50 \
+        -o bw_input_corrected/"${base}_ratio_corrected.bw" \
+        -p 12
+done
+
+# 5. h3k37me3 using input2_B12_1.bw
+for i in h3k37me3*.bw; do
+    base=$(basename "$i" .bw)
+    bigwigCompare \
+        -b1 "$i" \
+        -b2 input2_B12_1.bw \
+        --operation ratio \
+        --pseudocount 0.001 \
+        --skipNAs \
+        --binSize 50 \
+        -o bw_input_corrected/"${base}_ratio_corrected.bw" \
+        -p 12
+done
+
+# 6. h3k37me1 using input1_B12.bw
+for i in h3k37me1*.bw; do
+    base=$(basename "$i" .bw)
+    bigwigCompare \
+        -b1 "$i" \
+        -b2 input1_B12.bw \
+        --operation ratio \
+        --pseudocount 0.001 \
+        --skipNAs \
+        --binSize 50 \
+        -o bw_input_corrected/"${base}_ratio_corrected.bw" \
+        -p 12
+done
+
+date ;
+
+
+
+
+#### Correcting BigWigs with log2 and input for metageneplotting (no smoothing)
+
+bigwigCompare -b1 h3k37me3_B12_1.bw -b2 input2_B12_1.bw --operation log2 --skipNAs --skipZeroOverZero --binSize 50 -o bw_input_corrected_log2/h3k37me3_log_corrected.bw -p 12 ; 
+bigwigCompare -b1 h3k37me1_B12.bw -b2 input1_B12.bw --operation log2 --skipNAs--skipZeroOverZero --binSize 50 -o bw_input_corrected_log2/h3k37me1_log_corrected.bw -p 12 ;
+bigwigCompare -b1 h3k9me3.bw -b2 input.bw --operation log2 --skipNAs --skipZeroOverZero --binSize 50 -o bw_input_corrected_log2/h3k9me3_log_corrected.bw -p 12 ;
+bigwigCompare -b1 h3k36me3.bw -b2 input.bw --operation log2 --skipNAs --skipZeroOverZero --binSize 50 -o bw_input_corrected_log2/h3k36me3_log_corrected.bw -p 12 ;
+bigwigCompare -b1 h3k27me3.bw -b2 input.bw --operation log2 --skipNAs --skipZeroOverZero --binSize 50 -o bw_input_corrected_log2/h3k27me3_log_corrected.bw -p 12 ;
+bigwigCompare -b1 h3k36me2.bw -b2 input.bw --operation log2 --skipNAs --skipZeroOverZero --binSize 50 -o bw_input_corrected_log2/h3k36me2_log_corrected.bw -p 12 ; 

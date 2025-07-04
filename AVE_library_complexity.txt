@@ -1,0 +1,22 @@
+#### QC for ChIP-Seq complexity ~ preseq package ####
+
+
+cd /mnt/c/Users/gmzla/OneDrive\ -\ UNIVERSIDAD\ DE\ SEVILLA\ \(1\)/Escritorio/AGUSTIN/Data/mutK37R/qc_test
+
+samtools sort -n -@ 10 -o sorted_h3k37me3_B12_1.bam ../h3k37me3_B12_1.bam
+preseq lc_extrap -bam -verbose -quick sorted_h3k37me3_B12_1.bam &> log_preseq.txt
+
+# M_1: Extracted from "COUNTS OF 1".
+# M_2: Extracted from "OBSERVED COUNTS" for 2.
+# M_DISTINCT: Extracted from "DISTINCT READS"
+# Total number of reads: Extracted from "TOTAL READS".
+
+# These values are used to calculate the following ENCODE ChIP-seq quality metrics:
+
+# PCR Bottlenecking Coefficient 1 (PBC1): PBC1 = M_1 ÷ M_DISTINCT = "COUNTS OF 1" ÷ "DISTINCT READS"
+# PCR Bottlenecking Coefficient 2 (PBC2): PBC2 = M_1 ÷ M_2 = "COUNTS OF 1" ÷ "OBSERVED COUNTS" for 2
+# Non-Redundant Fraction (NRF): NRF = The number of distinct uniquely mapping reads (i.e., the number after removing duplicates) ÷ the total number of reads = "DISTINCT READS" ÷ "TOTAL READS"
+
+
+
+
